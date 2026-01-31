@@ -1,73 +1,37 @@
-# 🧠 Reminder System Architecture
+# Professional Project Architecture
 
-This document outlines the core logic and architectural decisions behind the Client Reminder Bot.
-
-## 🔹 Core Philosophy: Backend-Only Delivery
-**Decision:** All reminder processing and delivery must happen on the backend server.
-**Why:** 
-- Frontend browsers cannot run in the background or maintain 24/7 activity.
-- APIs and secrets (SMTP/Twilio keys) are protected on the server.
-- The system continues to run even if all users close their browsers.
+This project follows a strict **Separation of Concerns (SoC)** architecture, a standard practiced by senior developers to ensure scalability, testability, and maintainability.
 
 ---
 
-## 🔹 System Workflow
+## 🏗️ Backend Structure (`backend/`)
 
-```mermaid
-graph TD
-    A[Owner: Create Reminder] -->|POST /api/reminders| B[Backend API]
-    B -->|Save| C[(SQLite Database)]
-    C -->|Query| D[Scheduler: node-cron]
-    D -->|Every Minute| E{Is it time?}
-    E -->|Yes| F[Delivery Engine]
-    F -->|Email| G[Nodemailer / SendGrid]
-    F -->|WhatsApp| H[Twilio / Meta API]
-    G -->|Success| I[Update Status: Sent]
-    H -->|Success| I
-    E -->|No| D
-```
+- **`config/`**: Contains core configurations like Database initialization.
+    - *Why:* Keeps environmental logic separated from business logic.
+- **`controllers/`**: Handles incoming API requests, validates inputs (using Joi), and coordinates responses.
+    - *Why:* Ensures that the Routes remain clean and only handle URIs.
+- **`services/`**: The "workhorse" of the application. Contains specific logic for Email and WhatsApp.
+    - *Special Case (WhatsApp Mock):* Decoupled to allow instant replacement with Twilio/Meta in production without touching core code.
+- **`jobs/`**: Contains background processes like the `reminderScheduler`.
+    - *Why:* Cron-based automation should never block the main API response cycle.
+- **`models/`**: Defines the SQLite schema using Sequelize ORM.
+    - *Why:* Centralizes data integrity and relationships (e.g., Client ↔ Reminder).
+- **`routes/`**: Defines the API surface (`/api/clients`, `/api/reminders`).
 
 ---
 
-## 🔹 Detailed Implementation Phases
+## 🎨 Frontend Structure (`frontend/`)
 
-### Phase 1: Persistence
-- **Client Model**: Stores destination data (Email, Phone) and personalization fields (Name).
-- **Reminder Model**: Stores content, schedule time, delivery channel, and status (`pending`, `sent`, `failed`).
-- **Why**: Without persistence, the system would lose all tasks upon a restart.
-
-### Phase 2: Intent Capture
-- **Frontend Forms**: Capture the user's intent (Who, What, When, How).
-- **Validation**: The backend strictly validates all incoming data to prevent security risks or invalid tasks.
-
-### Phase 3: The Heart (The Scheduler)
-- **Node-Cron**: Runs a "heartbeat" every 60 seconds.
-- **Query Logic**: Searches for `scheduleAt <= currentTime AND sent = false`.
-- **Reliability**: This "pull" method is more stable than "exact time" timers which can crash across restarts.
-
-### Phase 4: Delivery Engine
-- **Email Flow**:
-  - Uses **SMTP** (Nodemailer for dev, SendGrid for production).
-  - Handles delivery and updates the database flag to prevent duplicates.
-- **WhatsApp Flow**:
-  - Uses **Official APIs** (Twilio/Meta) to prevent number banning.
-  - Implements **Message Templates** for production compliance.
+- **Vite & React**: Chosen for state-of-the-art performance and build speed.
+- **`services/api.js`**: Centralized Axios instance.
+    - *Why:* No Axios calls should live inside UI components (Senior practice: Maintainability).
+- **Tailwind CSS**: Utility-first styling for a premium, responsive UI.
 
 ---
 
-## 🔹 Localhost vs. Production
-| Feature | Localhost (Dev) | Production |
-|---------|-----------------|------------|
-| **Email** | Gmail / Log Only | SendGrid (Dedicated) |
-| **WhatsApp** | Twilio Sandbox | Official Live API |
-| **Persistence** | SQLite | SQLite / Postgres |
-| **Safety** | Logs Errors | Retries & Monitoring |
+## �️ Recruitment Highlights
 
----
-
-## 🔹 Safety Checklist
-- [x] **Database Persistence**: No data loss on restart.
-- [x] **Cron Scheduling**: Reliable time-based execution.
-- [x] **Backend-Only Delivery**: Secure and background-ready.
-- [x] **Status Flagging**: Zero chance of duplicate messages.
-- [x] **Secret Management**: Env variables protection.
+1.  **Strict Validation (Phase 1.5)**: Every database entry is validated via Sequelize and Joi. Invalid data never touches the disk.
+2.  **Environment Isolation (Phase 1.3)**: sensitive keys (SMTP/Twilio) are isolated in `.env`, demonstrated by a professional `.gitignore`.
+3.  **Scheduler Reliability (Phase 1.11)**: Uses a `sent` flag and `retryCount` to guarantee "Exactly Once" or tracked failure delivery—preventing duplicate reminders.
+4.  **Decoupled Services (Phase 1.6)**: Services return results (true/false) instead of throwing errors to prevent the scheduler from crashing.

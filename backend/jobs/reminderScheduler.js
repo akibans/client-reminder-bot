@@ -2,8 +2,8 @@ import cron from "node-cron";
 import { Op } from "sequelize";
 import Reminder from "../models/Reminder.js";
 import Client from "../models/Client.js";
-import sendEmail from "../config/mail.js";
-import sendWhatsApp from "../config/whatsapp.js";
+import sendEmail from "../services/emailService.js";
+import sendWhatsApp from "../services/whatsappService.js";
 
 cron.schedule("* * * * *", async () => {
     console.log("Checking for due reminders...");

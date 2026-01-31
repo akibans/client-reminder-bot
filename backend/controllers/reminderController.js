@@ -1,17 +1,45 @@
 import Reminder from "../models/Reminder.js";
 import Client from "../models/Client.js";
+import Joi from "joi";
 
-// Get all reminders
+const reminderSchema = Joi.object({
+  message: Joi.string().min(1).max(1000).required(),
+  sendVia: Joi.string().valid('email', 'whatsapp').required(),
+  scheduleAt: Joi.date().greater('now').required(),
+  clients: Joi.array().items(Joi.string().uuid()).min(1).required()
+});
+
+// Get reminders (with pagination and tab filtering)
 export const getReminders = async (req, res, next) => {
   try {
-    const reminders = await Reminder.findAll({
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sent = req.query.sent; // Optional filter
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    if (sent !== undefined) {
+      where.sent = sent === 'true';
+    }
+
+    const { count, rows } = await Reminder.findAndCountAll({
+      where,
       include: {
         model: Client,
-        through: { attributes: [] } // Hide junction table attributes
+        through: { attributes: [] }
       },
-      order: [['scheduleAt', 'ASC']]
+      order: [['scheduleAt', 'ASC']],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json(reminders);
+
+    res.json({
+      reminders: rows,
+      total: count,
+      page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
     next(error);
   }
@@ -20,18 +48,21 @@ export const getReminders = async (req, res, next) => {
 // Create a new reminder
 export const createReminder = async (req, res, next) => {
   try {
-    const { clients, ...reminderData } = req.body;
+    const { error, value } = reminderSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
+    const { clients, ...reminderData } = value;
     
     // Create the reminder
     const reminder = await Reminder.create(reminderData);
 
-    // Associate clients if provided
-    if (clients && clients.length > 0) {
-      const clientInstances = await Client.findAll({
-        where: { id: clients }
-      });
-      await reminder.setClients(clientInstances);
-    }
+    // Associate clients
+    const clientInstances = await Client.findAll({
+      where: { id: clients }
+    });
+    await reminder.setClients(clientInstances);
 
     res.status(201).json(reminder);
   } catch (error) {

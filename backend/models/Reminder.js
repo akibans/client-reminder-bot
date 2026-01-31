@@ -31,6 +31,14 @@ const Reminder = sequelize.define('Reminder', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  sentAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  retryCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
 }, {
   timestamps: true,
 });

@@ -52,20 +52,32 @@ cron.schedule("* * * * *", async () => {
             }
             
             // Update status based on delivery success
-            r.sent = true;
+            r.sentAt = new Date(); // Professional Audit Timestamp
+
             if (successCount === clients.length) {
+                r.sent = true;
                 r.status = 'sent';
                 r.failureReason = null;
             } else if (successCount > 0) {
-                r.status = 'sent'; // Partial success is still 'sent' but we could add 'partial'
+                r.sent = true;
+                r.status = 'sent'; // Partial success is still 'sent'
                 r.failureReason = `Partial failure: ${lastError}`;
             } else {
-                r.status = 'failed';
-                r.failureReason = lastError || 'Unknown delivery error';
+                // If every client failed, increment retryCount
+                r.retryCount += 1;
+                
+                if (r.retryCount >= 3) {
+                    r.sent = true; // Give up after 3 attempts
+                    r.status = 'failed';
+                    r.failureReason = `Failed after 3 attempts. Last error: ${lastError}`;
+                } else {
+                    r.status = 'failed'; // Mark as failed but keep 'sent=false' to retry
+                    r.failureReason = `Attempt ${r.retryCount} failed: ${lastError}. Retrying later...`;
+                }
             }
 
             await r.save();
-            console.log(`Marked reminder ${r.id} as ${r.status}.`);
+            console.log(`Processed reminder ${r.id}. Status: ${r.status}, RetryCount: ${r.retryCount}`);
         }
     } catch (error) {
         console.error("Scheduler Error:", error);

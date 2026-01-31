@@ -23,8 +23,10 @@ const sendWhatsApp = async (to, body) => {
     const formattedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
 
     if (!client) {
-      console.log(`[WHATSAPP LOG ONLY]: To: ${formattedTo}, Message: ${body}`);
-      return { sid: "log_only_mode" };
+      console.log(`\n[WHATSAPP MOCK DELIVERED]`);
+      console.log(`To: ${formattedTo}`);
+      console.log(`Message: ${body}\n`);
+      return { sid: "mock_delivered_success" };
     }
     
     const message = await client.messages.create({

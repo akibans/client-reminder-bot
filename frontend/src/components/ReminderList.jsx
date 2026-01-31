@@ -16,6 +16,7 @@ const ReminderList = () => {
     // Modal States
     const [modalConfig, setModalConfig] = useState({ isOpen: false, type: 'single', id: null });
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         fetchReminders();
@@ -95,11 +96,16 @@ const ReminderList = () => {
         }
     };
 
-    // Filter reminders based on tab
+    // Filter reminders based on tab AND searchTerm
     const filteredReminders = reminders.filter(r => {
-        if (activeTab === "upcoming") return !r.sent;
-        if (activeTab === "history") return r.sent;
-        return true;
+        const matchesTab = activeTab === "upcoming" ? !r.sent : r.sent;
+        
+        const searchStr = searchTerm.toLowerCase();
+        const matchesSearch = 
+            r.message.toLowerCase().includes(searchStr) ||
+            (r.Clients && r.Clients.some(c => c.name.toLowerCase().includes(searchStr)));
+            
+        return matchesTab && matchesSearch;
     });
 
     const formatDate = (dateString) => {
@@ -110,6 +116,24 @@ const ReminderList = () => {
 
     return (
         <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col h-full ring-1 ring-gray-900/5">
+            {/* Search Bar */}
+            <div className="px-4 pt-4 pb-2 border-b border-gray-100 bg-white">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Search by message or client..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50/30 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
+                    />
+                </div>
+            </div>
+
             {/* Tabs */}
             <div className="border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
                 <nav className="-mb-px flex flex-1" aria-label="Tabs">
@@ -278,6 +302,27 @@ const ReminderList = () => {
                     </ul>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    >
+                        &larr; Prev
+                    </button>
+                    <span className="text-xs text-gray-400">Page {page} of {totalPages}</span>
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    >
+                        Next &rarr;
+                    </button>
+                </div>
+            )}
 
             <ConfirmModal 
                 isOpen={modalConfig.isOpen}

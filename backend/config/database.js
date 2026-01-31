@@ -19,8 +19,10 @@ export const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ SQLite Database connected successfully.');
-    // Sync models with database
+    // Wrap sync in PRAGMA to prevent foreign key constraint issues in SQLite during schema changes
+    await sequelize.query('PRAGMA foreign_keys = OFF;');
     await sequelize.sync({ alter: true }); 
+    await sequelize.query('PRAGMA foreign_keys = ON;');
     console.log('✅ Models synchronized.');
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error);

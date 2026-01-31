@@ -6,12 +6,15 @@ import AlertModal from "./AlertModal";
 const ReminderList = () => {
     const [reminders, setReminders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("upcoming"); // 'upcoming' or 'history'
-    
-    // Power User States
+    const [activeTab, setActiveTab] = useState("upcoming");
     const [selectedReminders, setSelectedReminders] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [editTime, setEditTime] = useState("");
+
+    // Pagination states
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     // Modal States
     const [modalConfig, setModalConfig] = useState({ isOpen: false, type: 'single', id: null });
@@ -20,14 +23,23 @@ const ReminderList = () => {
 
     useEffect(() => {
         fetchReminders();
-        const interval = setInterval(fetchReminders, 5000); // 5s Polling to match Dashboard live feel
+        const interval = setInterval(fetchReminders, 5000); 
         return () => clearInterval(interval);
-    }, []);
+    }, [activeTab, page, searchTerm]);
 
     const fetchReminders = async () => {
         try {
-            const { data } = await getReminders();
-            setReminders(data);
+            const isSent = activeTab === "history" ? "true" : "false";
+            const { data } = await getReminders({ 
+                page, 
+                limit: 10, 
+                sent: isSent,
+                search: searchTerm 
+            });
+            
+            setReminders(data.reminders || []);
+            setTotalPages(data.totalPages || 1);
+            setTotalItems(data.total || 0);
         } catch (error) {
             console.error("Error fetching reminders", error);
         } finally {
@@ -53,16 +65,14 @@ const ReminderList = () => {
         try {
             if (type === 'single') {
                 await deleteReminder(id);
-                setReminders(reminders.filter(r => r.id !== id));
-                setSelectedReminders(selectedReminders.filter(rid => rid !== id));
             } else {
                 await deleteRemindersBulk(selectedReminders);
-                setReminders(reminders.filter(r => !selectedReminders.includes(r.id)));
                 setSelectedReminders([]);
             }
+            fetchReminders();
         } catch (error) {
             console.error("Error during deletion", error);
-            showAlert("Action Failed", error.response?.data?.message || "We encountered an error while trying to delete the reminder(s). Please try again or check your connection.");
+            showAlert("Action Failed", error.response?.data?.message || "We encountered an error while trying to delete the reminder(s).");
         } finally {
             setModalConfig({ isOpen: false, type: 'single', id: null });
         }
@@ -72,7 +82,7 @@ const ReminderList = () => {
         try {
             await updateReminder(id, { scheduleAt: editTime });
             setEditingId(null);
-            fetchReminders(); // Refresh list from DB
+            fetchReminders(); 
         } catch (error) {
             console.error("Error updating reminder", error);
             const msg = error.response?.data?.message || "Failed to reschedule the reminder.";
@@ -89,24 +99,15 @@ const ReminderList = () => {
     };
 
     const toggleSelectAll = () => {
-        if (selectedReminders.length === filteredReminders.length) {
+        if (selectedReminders.length === reminders.length) {
             setSelectedReminders([]);
         } else {
-            setSelectedReminders(filteredReminders.map(r => r.id));
+            setSelectedReminders(reminders.map(r => r.id));
         }
     };
 
-    // Filter reminders based on tab AND searchTerm
-    const filteredReminders = reminders.filter(r => {
-        const matchesTab = activeTab === "upcoming" ? !r.sent : r.sent;
-        
-        const searchStr = searchTerm.toLowerCase();
-        const matchesSearch = 
-            r.message.toLowerCase().includes(searchStr) ||
-            (r.Clients && r.Clients.some(c => c.name.toLowerCase().includes(searchStr)));
-            
-        return matchesTab && matchesSearch;
-    });
+    // Note: Filtering is now handled on the server side via fetchReminders
+    const filteredReminders = reminders; 
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -128,7 +129,7 @@ const ReminderList = () => {
                         type="text"
                         placeholder="Search by message or client..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                         className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50/30 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all"
                     />
                 </div>
@@ -138,24 +139,24 @@ const ReminderList = () => {
             <div className="border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
                 <nav className="-mb-px flex flex-1" aria-label="Tabs">
                     <button
-                        onClick={() => { setActiveTab("upcoming"); setSelectedReminders([]); }}
+                        onClick={() => { setActiveTab("upcoming"); setSelectedReminders([]); setPage(1); }}
                         className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors duration-200 ${
                             activeTab === "upcoming"
                                 ? "border-indigo-500 text-indigo-600 bg-indigo-50/50"
                                 : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         }`}
                     >
-                        Upcoming ({reminders.filter(r => !r.sent).length})
+                        Upcoming ({activeTab === "upcoming" ? totalItems : "-"})
                     </button>
                     <button
-                        onClick={() => { setActiveTab("history"); setSelectedReminders([]); }}
+                        onClick={() => { setActiveTab("history"); setSelectedReminders([]); setPage(1); }}
                         className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors duration-200 ${
                             activeTab === "history"
                                 ? "border-indigo-500 text-indigo-600 bg-indigo-50/50"
                                 : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         }`}
                     >
-                        History ({reminders.filter(r => r.sent).length})
+                        History ({activeTab === "history" ? totalItems : "-"})
                     </button>
                 </nav>
             </div>

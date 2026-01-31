@@ -12,8 +12,8 @@ const ReminderForm = () => {
     useEffect(() => {
         const fetchClients = async () => {
             try {
-                const { data } = await getClients();
-                setClients(data);
+                const { data } = await getClients({ limit: 1000 });
+                setClients(data.clients || []);
             } catch (error) {
                 console.error("Failed to fetch clients", error);
             }

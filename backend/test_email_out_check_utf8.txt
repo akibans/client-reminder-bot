@@ -1,0 +1,42 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒùé∩╕Å backup and recover secrets: https://dotenvx.com/ops
+Testing email delivery to clientreminder.bot@gmail.com...
+[EMAIL] Attempting to send message to: clientreminder.bot@gmail.com
+node : Γ¥î [EMAIL] Failed 
+to send to clientreminder.b
+ot@gmail.com: Invalid 
+login: 535-5.7.8 Username 
+and Password not accepted. 
+For more information, go to
+At line:1 char:1
++ node test_email.js > 
+test_email_out_check.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpeci    fied: 
+(Γ¥î [EMAIL    ] 
+Fai...ormation,     go 
+to:String) []    , 
+RemoteException
+    + FullyQualifiedE    
+rrorId : NativeCo    
+mmandError
+ 
+535 5.7.8  https://support.
+google.com/mail/?p=BadCrede
+ntials d9443c01a7336-2a88b4
+c40e1sm121082655ad.55 - 
+gsmtp
+Test failed with error: 
+Invalid login: 535-5.7.8 
+Username and Password not 
+accepted. For more 
+information, go to
+535 5.7.8  https://support.
+google.com/mail/?p=BadCrede
+ntials d9443c01a7336-2a88b4
+c40e1sm121082655ad.55 - 
+gsmtp
+

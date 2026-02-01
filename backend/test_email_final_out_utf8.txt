@@ -1,0 +1,7 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+Testing email delivery to clientreminder.bot@gmail.com...
+[EMAIL] Attempting to send message to: clientreminder.bot@gmail.com
+Γ£à [EMAIL] Sent successfully to clientreminder.bot@gmail.com. MessageId: <71f42cc5-6c27-8bfe-0383-734e3d767831@gmail.com>
+Test execution finished.
+

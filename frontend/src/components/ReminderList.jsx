@@ -21,11 +21,21 @@ const ReminderList = () => {
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Debounce timers
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500); // 500ms debounce
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     useEffect(() => {
         fetchReminders();
         const interval = setInterval(fetchReminders, 5000); 
         return () => clearInterval(interval);
-    }, [activeTab, page, searchTerm]);
+    }, [activeTab, page, debouncedSearch]);
 
     const fetchReminders = async () => {
         try {
@@ -34,7 +44,7 @@ const ReminderList = () => {
                 page, 
                 limit: 10, 
                 sent: isSent,
-                search: searchTerm 
+                search: debouncedSearch 
             });
             
             setReminders(data.reminders || []);
@@ -62,6 +72,15 @@ const ReminderList = () => {
 
     const confirmDelete = async () => {
         const { type, id } = modalConfig;
+        
+        // Optimistic UI Update
+        const previousReminders = [...reminders];
+        if (type === 'single') {
+            setReminders(reminders.filter(r => r.id !== id));
+        } else {
+            setReminders(reminders.filter(r => !selectedReminders.includes(r.id)));
+        }
+
         try {
             if (type === 'single') {
                 await deleteReminder(id);
@@ -69,9 +88,12 @@ const ReminderList = () => {
                 await deleteRemindersBulk(selectedReminders);
                 setSelectedReminders([]);
             }
+            // Fresh fetch to sync with server (handles edge cases like pagination)
             fetchReminders();
         } catch (error) {
             console.error("Error during deletion", error);
+            // Rollback on error
+            setReminders(previousReminders);
             showAlert("Action Failed", error.response?.data?.message || "We encountered an error while trying to delete the reminder(s).");
         } finally {
             setModalConfig({ isOpen: false, type: 'single', id: null });

@@ -30,8 +30,17 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const StatSkeleton = () => (
+        <div className="bg-white overflow-hidden shadow rounded-lg animate-pulse">
+            <div className="px-4 py-5 sm:p-6">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-300 rounded w-1/4"></div>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        <div className="min-h-screen bg-gray-50 font-sans animate-in fade-in">
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header Section */}
@@ -59,33 +68,43 @@ const Dashboard = () => {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-                    {/* Stat Card 1 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                        <div className="px-4 py-5 sm:p-6">
-                            <dt className="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
-                            <dd className="mt-1 text-3xl font-semibold text-gray-900">{loading ? "..." : stats.totalClients}</dd>
-                        </div>
-                    </div>
-                    {/* Stat Card 2 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                        <div className="px-4 py-5 sm:p-6">
-                            <dt className="text-sm font-medium text-gray-500 truncate">Active Reminders</dt>
-                            <dd className="mt-1 text-3xl font-semibold text-gray-900">{loading ? "..." : stats.activeReminders}</dd>
-                        </div>
-                    </div>
-                    {/* Stat Card 3 */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-                        <div className="px-4 py-5 sm:p-6">
-                            <dt className="text-sm font-medium text-gray-500 truncate">Messages Sent</dt>
-                            <dd className="mt-1 text-3xl font-semibold text-gray-900">{loading ? "..." : stats.messagesSent}</dd>
-                        </div>
-                    </div>
+                    {loading && stats.totalClients === 0 ? (
+                        <>
+                            <StatSkeleton />
+                            <StatSkeleton />
+                            <StatSkeleton />
+                        </>
+                    ) : (
+                        <>
+                            {/* Stat Card 1 */}
+                            <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+                                <div className="px-4 py-5 sm:p-6">
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
+                                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.totalClients}</dd>
+                                </div>
+                            </div>
+                            {/* Stat Card 2 */}
+                            <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+                                <div className="px-4 py-5 sm:p-6">
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Active Reminders</dt>
+                                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.activeReminders}</dd>
+                                </div>
+                            </div>
+                            {/* Stat Card 3 */}
+                            <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+                                <div className="px-4 py-5 sm:p-6">
+                                    <dt className="text-sm font-medium text-gray-500 truncate">Messages Sent</dt>
+                                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.messagesSent}</dd>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column: Client List (Takes up 2/3 on large screens) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 slide-in-bottom animate-in" style={{ animationDelay: '100ms' }}>
                         <div className="bg-white shadow rounded-lg overflow-hidden">
                             <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
                                 <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Clients</h3>
@@ -100,7 +119,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Right Column: Reminder List (Takes up 1/3 on large screens) */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 slide-in-bottom animate-in" style={{ animationDelay: '200ms' }}>
                          <div className="bg-white shadow rounded-lg overflow-hidden h-full">
                             <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
                                 <h3 className="text-lg leading-6 font-medium text-gray-900">Reminders</h3>

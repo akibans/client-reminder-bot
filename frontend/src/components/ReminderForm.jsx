@@ -57,7 +57,7 @@ const ReminderForm = () => {
     };
 
     return (
-        <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+        <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 animate-in zoom-in">
             <div className="px-6 py-8">
                 <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-gray-900">Schedule Reminder</h2>

@@ -18,13 +18,23 @@ const ClientList = ({ limit: initialLimit = 10 }) => {
     const [clientToDelete, setClientToDelete] = useState(null);
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
 
+    // Debounce timers
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500); // 500ms debounce
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     useEffect(() => {
         fetchClients();
-    }, [page, searchTerm]); // Refetch on page or search change
+    }, [page, debouncedSearch]); // Refetch on page or debounced search change
 
     const fetchClients = async () => {
         try {
-            const { data } = await getClients({ page, limit: initialLimit, search: searchTerm });
+            const { data } = await getClients({ page, limit: initialLimit, search: debouncedSearch });
             // API now returns { clients, total, page, totalPages }
             setClients(data.clients || []);
             setTotalPages(data.totalPages || 1);

@@ -9,6 +9,8 @@ import "./jobs/reminderScheduler.js"; // Start the scheduler job
 import clientRoutes from "./routes/clientRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import protect from "./middleware/authMiddleware.js";
 
 dotenv.config();
 connectDB();
@@ -27,9 +29,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/clients", clientRoutes);
-app.use("/api/reminders", reminderRoutes);
-app.use("/api/stats", statsRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/clients", protect, clientRoutes);
+app.use("/api/reminders", protect, reminderRoutes);
+app.use("/api/stats", protect, statsRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

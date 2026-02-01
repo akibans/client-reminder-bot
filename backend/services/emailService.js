@@ -11,16 +11,19 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, text) => {
+  console.log(`[EMAIL] Attempting to send message to: ${to}`);
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to,
       subject: "New Reminder",
       text,
     });
-    console.log(`Email sent to ${to}`);
+    console.log(`✅ [EMAIL] Sent successfully to ${to}. MessageId: ${info.messageId}`);
+    return info;
   } catch (error) {
-    console.error(`Error sending email to ${to}:`, error);
+    console.error(`❌ [EMAIL] Failed to send to ${to}:`, error.message);
+    throw error; // Re-throw to allow scheduler to handle failure
   }
 };
 

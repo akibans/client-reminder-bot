@@ -19,13 +19,14 @@ try {
 }
 
 const sendWhatsApp = async (to, body) => {
+  const formattedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+  console.log(`[WHATSAPP] Attempting to send message to: ${formattedTo}`);
+  
   try {
-    const formattedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
-
     if (!client) {
-      console.log(`\n[WHATSAPP MOCK DELIVERED]`);
-      console.log(`To: ${formattedTo}`);
-      console.log(`Message: ${body}\n`);
+      console.log(`[WHATSAPP MOCK] No Twilio client. Logging message details:`);
+      console.log(`[WHATSAPP MOCK] To: ${formattedTo}`);
+      console.log(`[WHATSAPP MOCK] Body: ${body}`);
       return { sid: "mock_delivered_success" };
     }
     
@@ -35,10 +36,10 @@ const sendWhatsApp = async (to, body) => {
       body: body,
     });
     
-    console.log(`✅ WhatsApp message sent to ${formattedTo}. SID: ${message.sid}`);
+    console.log(`✅ [WHATSAPP] Sent successfully to ${formattedTo}. SID: ${message.sid}`);
     return message;
   } catch (error) {
-    console.error(`❌ Error sending WhatsApp to ${to}:`, error.message);
+    console.error(`❌ [WHATSAPP] Failed to send to ${formattedTo}:`, error.message);
     throw error;
   }
 };

@@ -1,4 +1,4 @@
-import Client from "../models/Client.js";
+import { Client } from "../models/index.js";
 import Joi from "joi";
 
 // Validation Schema

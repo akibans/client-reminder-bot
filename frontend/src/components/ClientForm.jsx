@@ -17,7 +17,8 @@ const ClientForm = () => {
             navigate("/");
         } catch (error) {
             console.error("Error adding client", error);
-            alert("Failed to add client");
+            const msg = error.response?.data?.message || "Failed to add client";
+            alert(msg);
         } finally {
             setLoading(false);
         }

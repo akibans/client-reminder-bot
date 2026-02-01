@@ -1,6 +1,6 @@
-import Reminder from "../models/Reminder.js";
-import Client from "../models/Client.js";
+import { Reminder, Client, sequelize } from "../models/index.js";
 import Joi from "joi";
+import { Op } from "sequelize";
 
 const reminderSchema = Joi.object({
   message: Joi.string().min(1).max(1000).required(),
@@ -55,6 +55,7 @@ export const createReminder = async (req, res, next) => {
 
     const { clients, ...reminderData } = value;
     
+    console.log('Attempting to create reminder with data:', reminderData);
     // Create the reminder
     const reminder = await Reminder.create(reminderData);
 
@@ -66,6 +67,10 @@ export const createReminder = async (req, res, next) => {
 
     res.status(201).json(reminder);
   } catch (error) {
+    console.error('Reminder Creation Error:', error);
+    if (error.name === 'SequelizeValidationError') {
+        return res.status(400).json({ message: error.errors.map(e => e.message).join(', ') });
+    }
     next(error);
   }
 };
@@ -103,21 +108,41 @@ export const updateReminder = async (req, res, next) => {
 
 // Bulk Delete Reminders
 export const deleteRemindersBulk = async (req, res, next) => {
+    console.log(`Bulk deleting reminders: ${JSON.stringify(req.body.ids)}`);
     try {
         const { ids } = req.body; // Expecting array of UUIDs
         
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            console.warn("Bulk delete called with no IDs or invalid format");
             return res.status(400).json({ message: "No IDs provided" });
         }
 
-        await Reminder.destroy({
+        const junctionTable = sequelize.models.ClientReminders;
+        if (!junctionTable) {
+            console.error("ClientReminders model not found in sequelize.models");
+            throw new Error("Internal configuration error: Junction table not found");
+        }
+
+        // First, clear the associations in the junction table
+        console.log(`Clearing associations for reminders: ${ids}`);
+        await junctionTable.destroy({
             where: {
-                id: ids
+                ReminderId: { [Op.in]: ids }
             }
         });
 
-        res.json({ message: `${ids.length} reminders deleted` });
+        // Then delete the reminders themselves
+        console.log(`Deleting reminder records: ${ids}`);
+        const deletedCount = await Reminder.destroy({
+            where: {
+                id: { [Op.in]: ids }
+            }
+        });
+
+        console.log(`Successfully deleted ${deletedCount} reminders`);
+        res.json({ message: `${deletedCount} reminders deleted` });
     } catch (error) {
+        console.error("Bulk Delete Error:", error);
         next(error);
     }
 };
@@ -127,16 +152,44 @@ export const deleteReminder = async (req, res, next) => {
     console.log(`Attempting to delete reminder: ${req.params.id}`);
     try {
         const { id } = req.params;
-        const deleted = await Reminder.destroy({ where: { id } });
-        
-        if (!deleted) {
+        const reminder = await Reminder.findByPk(id);
+        if (!reminder) {
            console.warn(`Reminder ${id} not found for deletion`);
            return res.status(404).json({ message: "Reminder not found" });
         }
+
+        // Clear associations first
+        await reminder.setClients([]);
+        
+        // Then destroy
+        await reminder.destroy();
+
         console.log(`Reminder ${id} deleted successfully`);
         res.json({ message: "Reminder deleted" });
     } catch (error) {
         console.error(`Error deleting reminder ${req.params.id}:`, error);
+        next(error);
+    }
+};
+// Manual retry for a failed reminder
+export const retryReminder = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const reminder = await Reminder.findByPk(id, { include: Client });
+        
+        if (!reminder) {
+            return res.status(404).json({ message: "Reminder not found" });
+        }
+
+        // Reset status to pending so the scheduler picks it up, or we can trigger it now
+        reminder.status = 'pending';
+        reminder.sent = false;
+        reminder.retryCount = 0; // Reset retry count for manual retry
+        reminder.failureReason = null;
+        await reminder.save();
+
+        res.json({ message: "Reminder queued for retry", reminder });
+    } catch (error) {
         next(error);
     }
 };

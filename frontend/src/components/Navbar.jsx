@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
+    const { user, logout, isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
 
@@ -25,6 +27,17 @@ const Navbar = () => {
                         <Link to="/clients" className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive("/clients")}`}>Clients</Link>
                         <Link to="/add-client" className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive("/add-client")}`}>Add Client</Link>
                         <Link to="/create-reminder" className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive("/create-reminder")}`}>Create Reminder</Link>
+                        {isAuthenticated && (
+                            <div className="flex items-center ml-4 border-l pl-4 border-gray-100">
+                                <span className="text-gray-500 text-sm mr-3">Hi, {user?.username}</span>
+                                <button 
+                                    onClick={logout}
+                                    className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile menu button */}
@@ -56,6 +69,14 @@ const Navbar = () => {
                         <Link to="/clients" onClick={() => setIsOpen(false)} className={`block px-3 py-2 rounded-md text-base font-medium ${mobileActive("/clients")}`}>Clients</Link>
                         <Link to="/add-client" onClick={() => setIsOpen(false)} className={`block px-3 py-2 rounded-md text-base font-medium ${mobileActive("/add-client")}`}>Add Client</Link>
                         <Link to="/create-reminder" onClick={() => setIsOpen(false)} className={`block px-3 py-2 rounded-md text-base font-medium ${mobileActive("/create-reminder")}`}>Create Reminder</Link>
+                        {isAuthenticated && (
+                             <button 
+                                onClick={() => { setIsOpen(false); logout(); }} 
+                                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-gray-50 transition-colors"
+                             >
+                                 Logout
+                             </button>
+                        )}
                     </div>
                 </div>
             )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getReminders, deleteReminder, updateReminder, deleteRemindersBulk } from "../services/api";
+import { getReminders, deleteReminder, updateReminder, deleteRemindersBulk, retryReminder } from "../services/api";
 import ConfirmModal from "./ConfirmModal";
 import AlertModal from "./AlertModal";
 
@@ -87,6 +87,17 @@ const ReminderList = () => {
             console.error("Error updating reminder", error);
             const msg = error.response?.data?.message || "Failed to reschedule the reminder.";
             showAlert("Update Failed", msg);
+        }
+    };
+
+    const handleRetry = async (id) => {
+        try {
+            await retryReminder(id);
+            fetchReminders();
+        } catch (error) {
+            console.error("Error retrying reminder", error);
+            const msg = error.response?.data?.message || "Failed to retry the reminder.";
+            showAlert("Retry Failed", msg);
         }
     };
 
@@ -221,12 +232,20 @@ const ReminderList = () => {
                                                             Delivered
                                                         </span>
                                                     ) : (
-                                                        <span 
-                                                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-100 text-rose-800 border border-rose-200 cursor-help"
-                                                            title={reminder.failureReason || "Unknown Error"}
-                                                        >
-                                                            Failed
-                                                        </span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span 
+                                                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-100 text-rose-800 border border-rose-200 cursor-help"
+                                                                title={reminder.failureReason || "Unknown Error"}
+                                                            >
+                                                                Failed
+                                                            </span>
+                                                            <button 
+                                                                onClick={() => handleRetry(reminder.id)}
+                                                                className="text-[10px] bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors"
+                                                            >
+                                                                Retry
+                                                            </button>
+                                                        </div>
                                                     )
                                                 )}
 

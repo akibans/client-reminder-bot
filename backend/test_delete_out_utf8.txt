@@ -1,0 +1,118 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+Connected.
+Attempting to delete reminder: 0ff40be5-7c8e-4446-8b82-8cfac24edaad
+node : --- DELETION 
+ERROR CAUGHT ---
+At line:1 char:1
++ node test_delete.js 
+> test_delete_out.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (--- DELETI   
+ ON ERROR CAUGHT -    
+--:String) [], Re    
+moteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+Error
+    at 
+Database.<anonymous> (
+C:\Users\LENOVO\OneDri
+ve\Desktop\client 
+reminder bot\backend\n
+ode_modules\sequelize\
+lib\dialects\sqlite\qu
+ery.js:185:27)
+    at C:\Users\LENOVO
+\OneDrive\Desktop\clie
+nt reminder bot\backen
+d\node_modules\sequeli
+ze\lib\dialects\sqlite
+\query.js:183:50
+    at new Promise 
+(<anonymous>)
+    at Query.run (C:\U
+sers\LENOVO\OneDrive\D
+esktop\client 
+reminder bot\backend\n
+ode_modules\sequelize\
+lib\dialects\sqlite\qu
+ery.js:183:12)
+    at C:\Users\LENOVO
+\OneDrive\Desktop\clie
+nt reminder bot\backen
+d\node_modules\sequeli
+ze\lib\sequelize.js:31
+5:28
+    at async SQLiteQue
+ryInterface.delete (C:
+\Users\LENOVO\OneDrive
+\Desktop\client 
+reminder bot\backend\n
+ode_modules\sequelize\
+lib\dialects\abstract\
+query-interface.js:393
+:12)
+    at async 
+model.destroy (C:\User
+s\LENOVO\OneDrive\Desk
+top\client reminder bo
+t\backend\node_modules
+\sequelize\lib\model.j
+s:2627:16)
+    at async 
+testDelete (file:///C:
+/Users/LENOVO/OneDrive
+/Desktop/client%20remi
+nder%20bot/backend/tes
+t_delete.js:19:9) {
+  name: 'SequelizeFore
+ignKeyConstraintError'
+,
+  parent: [Error: 
+SQLITE_CONSTRAINT: 
+FOREIGN KEY 
+constraint failed] {
+    errno: 19,
+    code: 
+'SQLITE_CONSTRAINT',
+    sql: "DELETE FROM 
+`Reminders` WHERE 
+`id` = '0ff40be5-7c8e-
+4446-8b82-8cfac24edaad
+'"
+  },
+  original: [Error: 
+SQLITE_CONSTRAINT: 
+FOREIGN KEY 
+constraint failed] {
+    errno: 19,
+    code: 
+'SQLITE_CONSTRAINT',
+    sql: "DELETE FROM 
+`Reminders` WHERE 
+`id` = '0ff40be5-7c8e-
+4446-8b82-8cfac24edaad
+'"
+  },
+  sql: "DELETE FROM 
+`Reminders` WHERE 
+`id` = '0ff40be5-7c8e-
+4446-8b82-8cfac24edaad
+'",
+  parameters: {},
+  table: undefined,
+  fields: undefined,
+  value: undefined,
+  index: undefined,
+  reltype: undefined
+}
+----------------------
+-------
+

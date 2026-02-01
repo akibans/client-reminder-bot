@@ -7,6 +7,7 @@ const ReminderForm = () => {
     const [selectedClients, setSelectedClients] = useState([]);
     const [form, setForm] = useState({ message: "", sendVia: "email", scheduleAt: "" });
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,10 +24,18 @@ const ReminderForm = () => {
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-    const handleClientSelect = (e) => {
-        const options = [...e.target.selectedOptions].map(o => o.value);
-        setSelectedClients(options);
+    const toggleClient = (clientId) => {
+        setSelectedClients(prev => 
+            prev.includes(clientId) 
+                ? prev.filter(id => id !== clientId) 
+                : [...prev, clientId]
+        );
     };
+
+    const filteredClients = clients.filter(c => 
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -40,7 +49,8 @@ const ReminderForm = () => {
             navigate("/");
         } catch (error) {
             console.error("Error creating reminder", error);
-            alert("Failed to schedule reminder");
+            const msg = error.response?.data?.message || "Failed to schedule reminder";
+            alert(msg);
         } finally {
             setLoading(false);
         }
@@ -93,17 +103,47 @@ const ReminderForm = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Clients</label>
-                        <p className="text-xs text-gray-500 mb-2">Hold Ctrl (Cmd on Mac) to select multiple clients.</p>
-                        <select 
-                            multiple 
-                            onChange={handleClientSelect} 
-                            required
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-32"
-                        >
-                            {clients.length === 0 && <option disabled>No clients found</option>}
-                            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Select Clients</label>
+                            <span className="text-xs text-indigo-600 font-medium">{selectedClients.length} selected</span>
+                        </div>
+                        
+                        <div className="mb-2">
+                            <input 
+                                type="text"
+                                placeholder="Search clients..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+
+                        <div className="border border-gray-300 rounded-md overflow-hidden bg-gray-50/50">
+                            <div className="max-h-48 overflow-y-auto divide-y divide-gray-200">
+                                {filteredClients.length === 0 ? (
+                                    <div className="p-4 text-center text-sm text-gray-500">No matching clients found</div>
+                                ) : (
+                                    filteredClients.map(c => (
+                                        <label 
+                                            key={c.id} 
+                                            className={`flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors ${selectedClients.includes(c.id) ? 'bg-indigo-50' : ''}`}
+                                        >
+                                            <input 
+                                                type="checkbox"
+                                                checked={selectedClients.includes(c.id)}
+                                                onChange={() => toggleClient(c.id)}
+                                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                                                <p className="text-xs text-gray-500 truncate">{c.email}</p>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">Selected clients will receive this reminder via {form.sendVia}.</p>
                     </div>
 
                     <div className="flex flex-col space-y-3 pt-4">

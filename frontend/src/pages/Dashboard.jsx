@@ -4,8 +4,10 @@ import ClientList from "../components/ClientList";
 import ReminderList from "../components/ReminderList";
 import { getStats } from "../services/api";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
+    const { logout, user } = useAuth();
     const [stats, setStats] = useState({ totalClients: 0, activeReminders: 0, messagesSent: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -45,7 +47,7 @@ const Dashboard = () => {
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">Overview of your client reminders and activity.</p>
                     </div>
-                    <div className="mt-4 flex space-x-3 md:mt-0">
+                    <div className="mt-4 flex space-x-3 md:mt-0 items-center">
                         <Link to="/add-client" className="inline-flex justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                            Add Client
                         </Link>

@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import { connectDB } from "./config/database.js";
 import "./models/index.js";
 import protect from "./middleware/authMiddleware.js";
@@ -33,7 +34,7 @@ app.use((req, res, next) => {
 // Rate limiting (skip auth routes - they have their own)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000, // Increased from 100 to allow frequent polling
   skip: (req) => req.path.startsWith('/api/auth'),
   message: { message: "Too many requests, please try again later." }
 });
@@ -42,7 +43,7 @@ app.use('/api', apiLimiter);
 // Stricter limit for auth routes only
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 login attempts per hour
+  max: 50, // Increased from 10 to allow easier testing
   message: { message: "Too many login attempts, please try again later." }
 });
 app.use('/api/auth/login', authLimiter);

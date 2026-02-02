@@ -1,6 +1,24 @@
 import { createPortal } from "react-dom";
+import { useEffect } from "react";
 
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Delete", cancelText = "Cancel", type = "danger" }) => {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!isOpen) return;
+            if (e.key === "Enter") {
+                onConfirm();
+            } else if (e.key === "Escape") {
+                onCancel();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener("keydown", handleKeyDown);
+        }
+        
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onConfirm, onCancel]);
+
     if (!isOpen) return null;
 
     return createPortal(

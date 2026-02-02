@@ -1,7 +1,0 @@
-﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
-Connected.
-Attempting to bulk delete reminders: 33308911-41c1-4de4-a1e3-7d5f11ff1fb0
-Clearing associations...
-Deleting records...
-Successfully deleted 1 reminders.
-

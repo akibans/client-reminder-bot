@@ -33,7 +33,7 @@ const ReminderList = () => {
 
     useEffect(() => {
         fetchReminders();
-        const interval = setInterval(fetchReminders, 5000); 
+        const interval = setInterval(fetchReminders, 15000); 
         return () => clearInterval(interval);
     }, [activeTab, page, debouncedSearch]);
 

@@ -33,8 +33,7 @@ const Reminder = sequelize.define('Reminder', {
     type: DataTypes.DATE,
     allowNull: false,
     validate: {
-      isDate: true,
-      isAfter: new Date().toISOString() // DB level validation
+      isDate: true
     }
   },
   sent: {

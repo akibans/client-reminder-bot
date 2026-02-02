@@ -1,6 +1,22 @@
 import { createPortal } from "react-dom";
+import { useEffect } from "react";
 
 const AlertModal = ({ isOpen, title, message, onClose, type = "error" }) => {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!isOpen) return;
+            if (e.key === "Enter" || e.key === "Escape") {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener("keydown", handleKeyDown);
+        }
+        
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const bgColor = type === "error" ? "bg-red-100" : "bg-blue-100";

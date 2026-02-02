@@ -37,10 +37,10 @@ export const getReminders = async (req, res, next) => {
       where,
       include: { 
         model: Client, 
-        where: { userId: req.user.id }, // Extra safety: only user's clients
-        through: { attributes: [] } 
+        through: { attributes: [] },
+        required: false // LEFT JOIN - show reminders even if clients were deleted
       },
-      order: [["scheduleAt", "ASC"]],
+      order: [["scheduleAt", "DESC"]], // Most recent first for history
       limit,
       offset,
       distinct: true,

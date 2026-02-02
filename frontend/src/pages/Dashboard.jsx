@@ -26,7 +26,7 @@ const Dashboard = () => {
             }
         };
         fetchStats();
-        const interval = setInterval(fetchStats, 5000); // Polling every 5 seconds for "Live" feel
+        const interval = setInterval(fetchStats, 15000); // Polling every 15 seconds for "Live" feel
         return () => clearInterval(interval);
     }, []);
 

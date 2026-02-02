@@ -1,3 +1,4 @@
+console.log("Server starting...");
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -13,6 +14,8 @@ import clientRoutes from "./routes/clientRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import whatsappRoutes from "./routes/whatsapp.js";
+import whatsappService from "./services/whatsappBaileysService.js";
 
 dotenv.config();
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -82,6 +85,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/clients", protect, clientRoutes);
 app.use("/api/reminders", protect, reminderRoutes);
 app.use("/api/stats", protect, statsRoutes);
+app.use("/api/whatsapp", protect, whatsappRoutes);
 
 // 404 handler (must be before error handler)
 app.use((req, res) => {
@@ -163,6 +167,11 @@ const startServer = async () => {
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+      
+      // Initialize WhatsApp after server starts
+      if (process.env.WHATSAPP_USE_BAILEYS === 'true') {
+         whatsappService.initialize().catch(err => console.error("WhatsApp Init Error:", err));
+      }
     });
 
     // Graceful shutdown
@@ -189,4 +198,5 @@ const startServer = async () => {
   }
 };
 
+console.log("Calling startServer()...");
 startServer();

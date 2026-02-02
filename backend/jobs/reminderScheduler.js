@@ -47,6 +47,15 @@ cron.schedule("* * * * *", async () => {
                         console.log(`✅ Sent email to ${client.email} for reminder ${r.id}`);
                         successCount++;
                     } else if (r.sendVia === "whatsapp" && client.phone) {
+                        // Check if Baileys is enabled and connected
+                        if (process.env.WHATSAPP_USE_BAILEYS === 'true') {
+                             const status = await import('../services/whatsappBaileysService.js');
+                             if (!status.default.isConnected) {
+                                 console.warn(`⚠️ WhatsApp disconnected. Skipping send for ${client.phone}`);
+                                 continue; 
+                             }
+                        }
+
                         console.log(`Attempting to send WhatsApp message to ${client.phone}...`);
                         await sendWhatsApp(client.phone, r.message);
                         console.log(`✅ Sent WhatsApp to ${client.phone} for reminder ${r.id}`);

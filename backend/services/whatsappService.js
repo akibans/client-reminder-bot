@@ -1,17 +1,20 @@
 import twilio from "twilio";
 import dotenv from "dotenv";
+import whatsappBaileysService from "./whatsappBaileysService.js";
+
 dotenv.config();
 
 let client = null;
 
+// Initialize Twilio if enabled
 try {
   const sid = process.env.TWILIO_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
 
-  if (sid && token && !sid.includes('your_')) {
+  if (sid && token && !sid.includes('your_') && process.env.WHATSAPP_USE_BAILEYS !== 'true') {
     client = twilio(sid, token);
     console.log("✅ Twilio WhatsApp client initialized.");
-  } else {
+  } else if (process.env.WHATSAPP_USE_BAILEYS !== 'true') {
     console.warn("⚠️ Twilio credentials missing or placeholder. WhatsApp will be in LOG ONLY mode.");
   }
 } catch (error) {
@@ -19,8 +22,14 @@ try {
 }
 
 const sendWhatsApp = async (to, body) => {
+  // Check if we should use Baileys (Free WhatsApp)
+  if (process.env.WHATSAPP_USE_BAILEYS === 'true') {
+    return await whatsappBaileysService.sendMessage(to, body);
+  }
+
+  // Fallback to Twilio
   const formattedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
-  console.log(`[WHATSAPP] Attempting to send message to: ${formattedTo}`);
+  console.log(`[WHATSAPP TWILIO] Attempting to send message to: ${formattedTo}`);
   
   try {
     if (!client) {

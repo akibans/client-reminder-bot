@@ -3,6 +3,7 @@ import Client from './Client.js';
 import Reminder from './Reminder.js';
 import User from './User.js';
 import ReminderEvent from './ReminderEvent.js';
+import ReminderClient from './ReminderClient.js';
 
 // =========================
 // ASSOCIATIONS
@@ -16,8 +17,16 @@ User.hasMany(Reminder, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Reminder.belongsTo(User, { foreignKey: 'userId' });
 
 // Many-to-Many: Reminders <-> Clients
-Client.belongsToMany(Reminder, { through: 'ReminderClient' });
-Reminder.belongsToMany(Client, { through: 'ReminderClient' });
+Client.belongsToMany(Reminder, { 
+  through: ReminderClient,
+  foreignKey: 'ClientId',
+  otherKey: 'ReminderId'
+});
+Reminder.belongsToMany(Client, { 
+  through: ReminderClient,
+  foreignKey: 'ReminderId',
+  otherKey: 'ClientId'
+});
 
 // Reminder Events (audit trail)
 Reminder.hasMany(ReminderEvent, { foreignKey: 'reminderId', onDelete: 'CASCADE' });

@@ -203,6 +203,9 @@ export const deleteClient = async (req, res, next) => {
       });
     }
 
+    // Remove reminder associations explicitly (junction table)
+    await client.setReminders([], { transaction: t });
+
     await client.destroy({ transaction: t });
     await t.commit();
     

@@ -45,3 +45,20 @@ backend/logs/
 .gemini/
 .agent/
 brain/
+
+# WhatsApp Session Data
+whatsapp_auth/
+backend/whatsapp_auth/
+baileys_auth/
+backend/baileys_auth/
+auth_info_baileys/
+sessions/
+*.json
+!package.json
+!package-lock.json
+!Client_Reminder_Bot.postman_collection.json
+!frontend/package.json
+!backend/package.json
+!tsconfig.json
+!jsconfig.json
+!.eslintrc.json

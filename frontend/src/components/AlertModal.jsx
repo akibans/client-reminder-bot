@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+
 const AlertModal = ({ isOpen, title, message, onClose, type = "error" }) => {
     if (!isOpen) return null;
 
@@ -5,8 +7,8 @@ const AlertModal = ({ isOpen, title, message, onClose, type = "error" }) => {
     const iconColor = type === "error" ? "text-red-600" : "text-blue-600";
     const buttonColor = type === "error" ? "bg-red-600 hover:bg-red-700 focus:ring-red-500" : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500";
 
-    return (
-        <div className="fixed inset-0 z-[110] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div 
                     className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
@@ -53,8 +55,10 @@ const AlertModal = ({ isOpen, title, message, onClose, type = "error" }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
 export default AlertModal;
+

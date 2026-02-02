@@ -1,0 +1,7 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ΓÜÖ∩╕Å  specify custom .env file path with { path: '/custom/path/.env' }
+Checking models registered in sequelize:
+[ 'Client', 'Reminder', 'User', 'ClientReminders' ]
+Junction table ClientReminders found.
+Fetching a reminder to delete...
+No reminders found to test.
+

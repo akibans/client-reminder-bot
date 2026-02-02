@@ -1,18 +1,18 @@
-import Client from "../models/Client.js";
-import Reminder from "../models/Reminder.js";
+import { Client, Reminder } from "../models/index.js";
 
 export const getStats = async (req, res, next) => {
-    try {
-        const totalClients = await Client.count();
-        const activeReminders = await Reminder.count({ where: { sent: false } });
-        const messagesSent = await Reminder.count({ where: { sent: true } });
+  try {
+    // Scope all counts to the current user only
+    const totalClients = await Client.count({ where: { userId: req.user.id } });
+    const activeReminders = await Reminder.count({ where: { sent: false, userId: req.user.id } });
+    const messagesSent = await Reminder.count({ where: { sent: true, userId: req.user.id } });
 
-        res.json({
-            totalClients,
-            activeReminders,
-            messagesSent
-        });
-    } catch (error) {
-        next(error);
-    }
+    res.json({
+      totalClients,
+      activeReminders,
+      messagesSent
+    });
+  } catch (error) {
+    next(error);
+  }
 };

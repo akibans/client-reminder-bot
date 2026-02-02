@@ -18,6 +18,7 @@ export const registerUser = (data) => API.post("/auth/register", data);
 
 export const getClients = (params) => API.get("/clients", { params });
 export const createClient = (data) => API.post("/clients", data);
+export const updateClient = (id, data) => API.put(`/clients/${id}`, data);
 export const deleteClient = (id) => API.delete(`/clients/${id}`);
 
 export const getReminders = (params) => API.get("/reminders", { params });

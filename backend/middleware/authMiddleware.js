@@ -1,31 +1,82 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 
-const protect = async (req, res, next) => {
-  let token;
+// Validate JWT_SECRET at startup
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+const protect = async (req, res, next) => {
+  try {
+    let token;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({ 
+        message: 'Not authorized, no token',
+        correlationId: req.correlationId 
+      });
+    }
+
+    // Verify token
+    let decoded;
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      console.log(`[${req.correlationId}] JWT Error: ${jwtError.name} - ${jwtError.message}`);
       
-      req.user = await User.findByPk(decoded.id, {
+      if (jwtError.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          message: 'Token expired',
+          expiredAt: jwtError.expiredAt,
+          correlationId: req.correlationId 
+        });
+      }
+      
+      return res.status(401).json({ 
+        message: 'Not authorized, invalid token',
+        correlationId: req.correlationId 
+      });
+    }
+
+    // Get user from DB
+    let user;
+    try {
+      user = await User.findByPk(decoded.id, {
         attributes: { exclude: ['password'] }
       });
-      
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
-      }
-
-      next();
-    } catch (error) {
-      console.error('JWT Verification Error:', error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+    } catch (dbError) {
+      console.error(`[${req.correlationId}] Database error in auth middleware:`, dbError);
+      return res.status(500).json({ 
+        message: 'Authentication service unavailable',
+        correlationId: req.correlationId 
+      });
     }
-  }
+    
+    if (!user) {
+      console.log(`[${req.correlationId}] User not found for ID: ${decoded.id}`);
+      return res.status(401).json({ 
+        message: 'Not authorized, user not found',
+        correlationId: req.correlationId 
+      });
+    }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    req.user = user;
+    next();
+    
+  } catch (error) {
+    console.error(`[${req.correlationId}] Unexpected auth error:`, error);
+    res.status(500).json({ 
+      message: 'Authentication error',
+      correlationId: req.correlationId 
+    });
   }
 };
 

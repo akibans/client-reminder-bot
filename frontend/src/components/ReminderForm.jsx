@@ -49,8 +49,14 @@ const ReminderForm = () => {
             navigate("/");
         } catch (error) {
             console.error("Error creating reminder", error);
-            const msg = error.response?.data?.message || "Failed to schedule reminder";
-            alert(msg);
+            // Show detailed validation errors if available
+            const errors = error.response?.data?.errors;
+            const message = error.response?.data?.message || "Failed to schedule reminder";
+            if (errors && errors.length > 0) {
+                alert(`${message}:\n- ${errors.join('\n- ')}`);
+            } else {
+                alert(message);
+            }
         } finally {
             setLoading(false);
         }

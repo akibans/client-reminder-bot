@@ -2,8 +2,10 @@ import cron from "node-cron";
 import { Op } from "sequelize";
 import Reminder from "../models/Reminder.js";
 import Client from "../models/Client.js";
+import ReminderEvent from "../models/ReminderEvent.js";
 import sendEmail from "../services/emailService.js";
 import sendWhatsApp from "../services/whatsappService.js";
+import crypto from "crypto";
 
 cron.schedule("* * * * *", async () => {
     console.log("Checking for due reminders...");
@@ -11,12 +13,17 @@ cron.schedule("* * * * *", async () => {
         const reminders = await Reminder.findAll({
             where: {
                 scheduleAt: { [Op.lte]: new Date() },
-                sent: false
+                sent: false,
+                isProcessing: false // Idempotency check
             },
             include: Client
         });
 
         for (let r of reminders) {
+            const correlationId = crypto.randomUUID();
+            // Lock the reminder
+            r.isProcessing = true;
+            await r.save();
             console.log(`Processing reminder ${r.id}: "${r.message}"`);
             const clients = r.Clients || []; 
             
@@ -66,16 +73,33 @@ cron.schedule("* * * * *", async () => {
                 // If every client failed, increment retryCount
                 r.retryCount += 1;
                 
-                if (r.retryCount >= 3) {
-                    r.sent = true; // Give up after 3 attempts
+                if (r.retryCount >= r.maxRetries) {
+                    r.sent = true; 
                     r.status = 'failed';
-                    r.failureReason = `Failed after 3 attempts. Last error: ${lastError}`;
+                    r.failureReason = `Permanently failed after ${r.maxRetries} attempts. Last error: ${lastError}`;
                 } else {
-                    r.status = 'failed'; // Mark as failed but keep 'sent=false' to retry
+                    r.status = 'failed'; 
                     r.failureReason = `Attempt ${r.retryCount} failed: ${lastError}. Retrying later...`;
                 }
+
+                await ReminderEvent.create({
+                    reminderId: r.id,
+                    eventType: 'FAILED',
+                    message: r.failureReason,
+                    correlationId
+                });
             }
 
+            if (r.status === 'sent') {
+                await ReminderEvent.create({
+                    reminderId: r.id,
+                    eventType: 'SENT',
+                    message: successCount === clients.length ? 'Successfully delivered to all clients' : `Delivered to ${successCount}/${clients.length} clients`,
+                    correlationId
+                });
+            }
+
+            r.isProcessing = false; // Release lock
             await r.save();
             console.log(`Processed reminder ${r.id}. Status: ${r.status}, RetryCount: ${r.retryCount}`);
         }

@@ -12,14 +12,36 @@ export const validate = (schema) => (req, res, next) => {
 
 // Schemas
 export const clientSchema = Joi.object({
-  name: Joi.string().min(2).max(50).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().pattern(/^[0-9+\-()\s]+$/).allow('').optional().messages({'string.pattern.base': 'Phone number contains invalid characters'})
+  name: Joi.string().trim().min(2).max(50).required(),
+  email: Joi.string().trim().email().required(),
+  phone: Joi.string().trim().allow('', null).pattern(/^\+?[1-9]\d{1,14}$/).messages({
+    'string.pattern.base': 'Phone number must be in E.164 format (e.g. +1234567890)'
+  })
+});
+
+// 🆕 Update schema - all optional, at least one required
+export const clientUpdateSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(50),
+  email: Joi.string().trim().email(),
+  phone: Joi.string().trim().allow('', null).pattern(/^\+?[1-9]\d{1,14}$/).messages({
+    'string.pattern.base': 'Phone number must be in E.164 format (e.g. +1234567890)'
+  })
+}).min(1).messages({
+  'object.min': 'At least one field must be provided for update'
 });
 
 export const reminderSchema = Joi.object({
-  message: Joi.string().required(),
+  message: Joi.string().trim().min(1).max(2000).required(),
   sendVia: Joi.string().valid('email', 'whatsapp').required(),
-  scheduleAt: Joi.date().greater('now').required().messages({'date.greater': 'Schedule time must be in the future'}),
+  scheduleAt: Joi.date().greater('now').required().messages({
+    'date.greater': 'Schedule time must be in the future'
+  }),
   clients: Joi.array().items(Joi.string().guid({ version: ['uuidv4'] })).min(1).required()
+});
+
+// 🆕 Optional: Reminder update schema (only scheduleAt allowed)
+export const reminderUpdateSchema = Joi.object({
+  scheduleAt: Joi.date().greater('now').required().messages({
+    'date.greater': 'Schedule time must be in the future'
+  })
 });

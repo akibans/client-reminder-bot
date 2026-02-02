@@ -11,7 +11,14 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, text) => {
-  console.log(`[EMAIL] Attempting to send message to: ${to}`);
+  const isMock = process.env.EMAIL_MODE === 'mock';
+  console.log(`[EMAIL] ${isMock ? 'MOCK' : 'LIVE'} Attempting to send message to: ${to}`);
+  
+  if (isMock) {
+    console.log(`[EMAIL MOCK PAYLOAD] To: ${to}, Body: ${text}`);
+    return { messageId: 'mock-id-' + Date.now() };
+  }
+
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_USER,

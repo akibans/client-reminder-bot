@@ -5,6 +5,7 @@ import ReminderList from "../components/ReminderList";
 import { getStats } from "../services/api";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import WhatsAppConnect from "../components/WhatsAppConnect";
 
 const Dashboard = () => {
     const { logout, user } = useAuth();
@@ -40,7 +41,7 @@ const Dashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans animate-in fade-in">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans animate-in fade-in transition-colors">
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header Section */}
@@ -120,6 +121,9 @@ const Dashboard = () => {
 
                     {/* Right Column: Reminder List (Takes up 1/3 on large screens) */}
                     <div className="lg:col-span-1 slide-in-bottom animate-in" style={{ animationDelay: '200ms' }}>
+                        <div className="mb-6">
+                            <WhatsAppConnect />
+                        </div>
                          <div className="bg-white shadow rounded-lg overflow-hidden h-full">
                             <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
                                 <h3 className="text-lg leading-6 font-medium text-gray-900">Reminders</h3>

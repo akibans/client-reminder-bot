@@ -1,7 +1,9 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from 'sonner';
 
 // Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -13,7 +15,7 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 
 // Global Loading Spinner
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
   </div>
 );
@@ -21,7 +23,20 @@ const LoadingSpinner = () => (
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <SocketProvider>
+        <Router>
+        {/* Toaster must be inside Router but outside Suspense for global availability */}
+        <Toaster 
+          position="top-right" 
+          richColors 
+          closeButton
+          toastOptions={{
+            style: {
+              fontFamily: 'inherit',
+            },
+          }}
+        />
+        
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -34,6 +49,7 @@ function App() {
           </Routes>
         </Suspense>
       </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }

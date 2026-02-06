@@ -1,21 +1,27 @@
-import { User } from '../models/index.js';
+import db from '../models/index.js';
+const { User } = db;
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
+import TemplateService from '../services/templateService.js';
 
 const authSchema = Joi.object({
-  username: Joi.string().min(3).max(20).required(),
+  username: Joi.string().min(3).max(50).required(),
   password: Joi.string().min(6).required()
 });
 
 export const register = async (req, res, next) => {
   try {
-    const { error, value } = authSchema.validate(req.body);
+    console.log('Register request body:', req.body);
+    const { error, value } = authSchema.validate(req.body, { stripUnknown: true });
     if (error) return res.status(400).json({ message: error.details[0].message });
 
     const existingUser = await User.findOne({ where: { username: value.username } });
     if (existingUser) return res.status(400).json({ message: 'Username already exists' });
 
     const user = await User.create(value);
+    
+    // Seed default templates for new user
+    await TemplateService.seedDefaultTemplates(user.id);
     
     // Auto-login after registration
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });

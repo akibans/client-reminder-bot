@@ -1,4 +1,5 @@
-import { Client, Reminder } from "../models/index.js";
+import db from "../models/index.js";
+const { Client, Reminder } = db;
 
 export const getStats = async (req, res, next) => {
   try {

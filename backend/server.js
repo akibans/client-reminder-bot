@@ -14,13 +14,42 @@ import clientRoutes from "./routes/clientRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
-import whatsappRoutes from "./routes/whatsapp.js";
-import whatsappService from "./services/whatsappBaileysService.js";
+import whatsappRoutes from "./routes/whatsappRoutes.js";
+import templateRoutes from "./routes/templateRoutes.js";
+import whatsappService from "./services/whatsappService.js";
+import whatsappHandler from "./socket/handlers/whatsappHandler.js";
+import { Server } from "socket.io";
+import http from "http";
 
 dotenv.config();
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Initialize WhatsApp service with Socket.io
+whatsappService.setSocketIO(io);
+whatsappService.initialize();
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  // Register handlers
+  whatsappHandler(io, socket);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+app.set('io', io);
 
 // Security middleware
 app.use(helmet());
@@ -86,6 +115,7 @@ app.use("/api/clients", protect, clientRoutes);
 app.use("/api/reminders", protect, reminderRoutes);
 app.use("/api/stats", protect, statsRoutes);
 app.use("/api/whatsapp", protect, whatsappRoutes);
+app.use("/api/templates", protect, templateRoutes);
 
 // 404 handler (must be before error handler)
 app.use((req, res) => {
@@ -165,19 +195,15 @@ const startServer = async () => {
     console.log('Reminder scheduler started');
     
     const PORT = process.env.PORT || 5000;
-    const server = app.listen(PORT, () => {
+    const serverInstance = server.listen(PORT, () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-      
-      // Initialize WhatsApp after server starts
-      if (process.env.WHATSAPP_USE_BAILEYS === 'true') {
-         whatsappService.initialize().catch(err => console.error("WhatsApp Init Error:", err));
-      }
+      console.log(`WhatsApp initializing...`);
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal) => {
       console.log(`${signal} received. Starting graceful shutdown...`);
-      server.close(() => {
+      serverInstance.close(() => {
         console.log('HTTP server closed');
         process.exit(0);
       });

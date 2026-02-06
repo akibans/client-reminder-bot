@@ -1,4 +1,5 @@
-import { Client, Reminder, sequelize } from "../models/index.js";
+import db from "../models/index.js";
+const { Client, Reminder, sequelize } = db;
 import { Op } from "sequelize";
 import Joi from "joi";
 

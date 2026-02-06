@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
+import db from '../models/index.js';
+const { User } = db;
 
 // Validate JWT_SECRET at startup
 if (!process.env.JWT_SECRET) {

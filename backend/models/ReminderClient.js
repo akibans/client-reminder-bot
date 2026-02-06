@@ -7,31 +7,30 @@ const ReminderClient = sequelize.define('ReminderClient', {
     primaryKey: true,
     autoIncrement: true
   },
-  ReminderId: {
+  reminderId: {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'Reminders',
       key: 'id'
-    },
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
+    }
   },
-  ClientId: {
+  clientId: {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'Clients',
       key: 'id'
-    },
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
+    }
   }
 }, {
+  tableName: 'ReminderClients',
+  timestamps: true,
   indexes: [
     {
       unique: true,
-      fields: ['ReminderId', 'ClientId']
+      fields: ['reminderId', 'clientId'],
+      name: 'idx_reminder_client_unique'
     }
   ]
 });

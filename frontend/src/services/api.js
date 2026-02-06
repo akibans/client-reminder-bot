@@ -29,3 +29,5 @@ export const deleteReminder = (id) => API.delete(`/reminders/${id}`);
 export const retryReminder = (id) => API.post(`/reminders/${id}/retry`);
 
 export const getStats = () => API.get("/stats");
+
+export default API;

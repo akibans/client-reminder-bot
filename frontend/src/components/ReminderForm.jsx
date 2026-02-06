@@ -90,6 +90,8 @@ const ReminderForm = () => {
         
         setLoading(true);
         try {
+            // Frontend sends: message, sendVia, scheduleAt, clients
+            // Backend expects: message, sendVia, scheduleAt, clients
             await createReminder({ ...form, clients: selectedClients });
             fireConfetti();
             toast.success("Reminder scheduled! 🎉", {
@@ -99,7 +101,8 @@ const ReminderForm = () => {
         } catch (error) {
             console.error("Error creating reminder", error);
             const errors = error.response?.data?.errors;
-            const message = error.response?.data?.message || "Failed to schedule reminder";
+            // Handle both 'message' and 'error' fields from backend
+            const message = error.response?.data?.message || error.response?.data?.error || "Failed to schedule reminder";
             if (errors && errors.length > 0) {
                 toast.error(message, { description: errors.join(', ') });
             } else {

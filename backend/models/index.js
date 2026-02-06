@@ -1,56 +1,66 @@
+import { Sequelize } from 'sequelize';
 import sequelize from '../config/database.js';
-import Client from './Client.js';
-import Reminder from './Reminder.js';
-import User from './User.js';
-import ReminderEvent from './ReminderEvent.js';
-import ReminderClient from './ReminderClient.js';
 
-// =========================
-// ASSOCIATIONS
-// =========================
+// Import Models
+import ClientModel from './Client.js';
+import MessageTemplateModel from './MessageTemplate.js';
+import ReminderModel from './Reminder.js';
+import ReminderClientModel from './ReminderClient.js';
+import ReminderEventModel from './ReminderEvent.js';
+import UserModel from './User.js';
 
-// User ownership
-User.hasMany(Client, { foreignKey: 'userId', onDelete: 'CASCADE' });
-Client.belongsTo(User, { foreignKey: 'userId' });
+const db = {};
 
-User.hasMany(Reminder, { foreignKey: 'userId', onDelete: 'CASCADE' });
-Reminder.belongsTo(User, { foreignKey: 'userId' });
+// Initialize models
+db.Client = ClientModel;
+db.MessageTemplate = MessageTemplateModel;
+db.Reminder = ReminderModel;
+db.ReminderClient = ReminderClientModel;
+db.ReminderEvent = ReminderEventModel;
+db.User = UserModel;
 
-// Many-to-Many: Reminders <-> Clients
-Client.belongsToMany(Reminder, { 
-  through: ReminderClient,
-  foreignKey: 'ClientId',
-  otherKey: 'ReminderId'
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+// Define Associations
+
+// User <-> Client
+db.User.hasMany(db.Client, { foreignKey: 'userId', onDelete: 'CASCADE' });
+db.Client.belongsTo(db.User, { foreignKey: 'userId' });
+
+// User <-> Reminder
+db.User.hasMany(db.Reminder, { foreignKey: 'userId', onDelete: 'CASCADE' });
+db.Reminder.belongsTo(db.User, { foreignKey: 'userId' });
+
+// User <-> MessageTemplate
+db.User.hasMany(db.MessageTemplate, { foreignKey: 'userId', onDelete: 'CASCADE' });
+db.MessageTemplate.belongsTo(db.User, { foreignKey: 'userId' });
+
+// Reminder <-> Client (Many-to-Many)
+db.Reminder.belongsToMany(db.Client, { 
+  through: db.ReminderClient, 
+  foreignKey: 'reminderId', 
+  otherKey: 'clientId',
+  as: 'clients' 
 });
-Reminder.belongsToMany(Client, { 
-  through: ReminderClient,
-  foreignKey: 'ReminderId',
-  otherKey: 'ClientId'
+db.Client.belongsToMany(db.Reminder, { 
+  through: db.ReminderClient, 
+  foreignKey: 'clientId', 
+  otherKey: 'reminderId',
+  as: 'reminders' 
 });
 
-// Reminder Events (audit trail)
-Reminder.hasMany(ReminderEvent, { foreignKey: 'reminderId', onDelete: 'CASCADE' });
-ReminderEvent.belongsTo(Reminder, { foreignKey: 'reminderId' });
+// Reminder <-> ReminderEvent (One-to-Many)
+db.Reminder.hasMany(db.ReminderEvent, { foreignKey: 'reminderId', onDelete: 'CASCADE' });
+db.ReminderEvent.belongsTo(db.Reminder, { foreignKey: 'reminderId' });
 
-User.hasMany(ReminderEvent, { foreignKey: 'userId', onDelete: 'SET NULL' });
-ReminderEvent.belongsTo(User, { foreignKey: 'userId' });
-
-// =========================
-// EXPORTS
-// =========================
 export {
-  sequelize,
-  Client,
-  Reminder,
-  User,
-  ReminderEvent
+  ClientModel as Client,
+  MessageTemplateModel as MessageTemplate,
+  ReminderModel as Reminder,
+  ReminderClientModel as ReminderClient,
+  ReminderEventModel as ReminderEvent,
+  UserModel as User
 };
 
-// Default export for convenience
-export default {
-  sequelize,
-  Client,
-  Reminder,
-  User,
-  ReminderEvent
-};
+export default db;

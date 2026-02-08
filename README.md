@@ -8,14 +8,14 @@ This application allows business owners to manage clients and schedule automated
 
 ## 🏗️ Architecture & Clean Code (Senior Practices)
 
-### 🔵 Phase 1 — Backend (Logic-First)
+###  Phase 1 — Backend (Logic-First)
 - **Separation of Concerns**: Strictly uses the **Layered Architecture** (Routes → Controllers → Services → Models).
     - *Why:* Recruiter check: Controllers validate logic, Services handle "doing" things, Models handle data. Routes only handle URIs.
 - **Strict Validation**: All incoming data is triple-checked using **Joi** (API level) and **Sequelize** (Database level).
     - *Why:* Ensures zero garbage data enters the system.
 - **Exactly-Once Delivery**: The cron scheduler uses a atomic `sent` flag and tracked `retryCount` to guarantee reminders are never sent twice and failures are audited.
 
-### 🔵 Phase 2 — Frontend (Modern UX)
+###  Phase 2 — Frontend (Modern UX)
 - **Centralized API Layer**: No component talks directly to Axios. Every call is routed through `services/api.js`.
     - *Why:* Maximum maintainability. Changing a base URL happens in one file, not fifty.
 - **Server-Side Pagination & Search**: Efficiently scales to thousands of records by processing search and chunks on the server.

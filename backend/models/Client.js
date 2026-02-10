@@ -8,7 +8,7 @@ const Client = sequelize.define('Client', {
     primaryKey: true,
   },
   userId: {
-    type: DataTypes.INTEGER, // or DataTypes.UUID if User uses UUID
+    type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'Users', // Make sure this matches your User table name

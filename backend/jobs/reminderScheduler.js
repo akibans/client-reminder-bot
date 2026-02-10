@@ -1,11 +1,11 @@
 import cron from "node-cron";
 import { Op } from "sequelize";
-import Reminder from "../models/Reminder.js";
-import Client from "../models/Client.js";
-import ReminderEvent from "../models/ReminderEvent.js";
+import db from "../models/index.js";
 import sendEmail from "../services/emailService.js";
-import sendWhatsApp from "../services/whatsappService.js";
+import whatsappService from "../services/whatsappService.js";
 import crypto from "crypto";
+
+const { Reminder, Client, ReminderEvent } = db;
 
 cron.schedule("* * * * *", async () => {
     console.log("Checking for due reminders...");
@@ -14,9 +14,13 @@ cron.schedule("* * * * *", async () => {
             where: {
                 scheduleAt: { [Op.lte]: new Date() },
                 sent: false,
-                isProcessing: false // Idempotency check
+                isProcessing: false
             },
-            include: Client
+            include: [{
+                model: Client,
+                as: 'clients',
+                through: { attributes: [] }
+            }]
         });
 
         for (let r of reminders) {
@@ -25,13 +29,14 @@ cron.schedule("* * * * *", async () => {
             r.isProcessing = true;
             await r.save();
             console.log(`Processing reminder ${r.id}: "${r.message}"`);
-            const clients = r.Clients || []; 
+            const clients = r.clients || []; 
             
             if (clients.length === 0) {
                 console.warn(`No clients associated with reminder ${r.id}`);
                 r.status = 'failed';
                 r.failureReason = 'No clients associated';
                 r.sent = true;
+                r.isProcessing = false;
                 await r.save();
                 continue;
             }
@@ -47,19 +52,26 @@ cron.schedule("* * * * *", async () => {
                         console.log(`✅ Sent email to ${client.email} for reminder ${r.id}`);
                         successCount++;
                     } else if (r.sendVia === "whatsapp" && client.phone) {
-                        // Check if Baileys is enabled and connected
-                        if (process.env.WHATSAPP_USE_BAILEYS === 'true') {
-                             const status = await import('../services/whatsappBaileysService.js');
-                             if (!status.default.isConnected) {
-                                 console.warn(`⚠️ WhatsApp disconnected. Skipping send for ${client.phone}`);
-                                 continue; 
-                             }
+                        // Check if WhatsApp is connected
+                        const status = whatsappService.getStatus();
+                        if (status.status !== 'connected') {
+                            console.warn(`⚠️ WhatsApp disconnected. Skipping send for ${client.phone}`);
+                            lastError = 'WhatsApp service disconnected';
+                            continue; 
                         }
 
                         console.log(`Attempting to send WhatsApp message to ${client.phone}...`);
-                        await sendWhatsApp(client.phone, r.message);
-                        console.log(`✅ Sent WhatsApp to ${client.phone} for reminder ${r.id}`);
-                        successCount++;
+                        const result = await whatsappService.sendMessage(client.phone, r.message);
+                        if (result.success) {
+                            console.log(`✅ Sent WhatsApp to ${client.phone} for reminder ${r.id}`);
+                            successCount++;
+                        } else {
+                            console.error(`❌ WhatsApp send failed: ${result.error}`);
+                            lastError = result.error;
+                        }
+                    } else {
+                        console.warn(`⚠️ No valid contact for ${client.name} via ${r.sendVia}`);
+                        lastError = `No ${r.sendVia} contact for ${client.name}`;
                     }
                 } catch (sendError) {
                     console.error(`❌ Failed to send reminder to ${client.email || client.phone || client.name}:`, sendError);
@@ -68,7 +80,7 @@ cron.schedule("* * * * *", async () => {
             }
             
             // Update status based on delivery success
-            r.sentAt = new Date(); // Professional Audit Timestamp
+            r.sentAt = new Date();
 
             if (successCount === clients.length) {
                 r.sent = true;
@@ -76,8 +88,8 @@ cron.schedule("* * * * *", async () => {
                 r.failureReason = null;
             } else if (successCount > 0) {
                 r.sent = true;
-                r.status = 'sent'; // Partial success is still 'sent'
-                r.failureReason = `Partial failure: ${lastError}`;
+                r.status = 'sent';
+                r.failureReason = `Partial failure: ${successCount}/${clients.length} delivered. Error: ${lastError}`;
             } else {
                 // If every client failed, increment retryCount
                 r.retryCount += 1;
@@ -108,7 +120,7 @@ cron.schedule("* * * * *", async () => {
                 });
             }
 
-            r.isProcessing = false; // Release lock
+            r.isProcessing = false;
             await r.save();
             console.log(`Processed reminder ${r.id}. Status: ${r.status}, RetryCount: ${r.retryCount}`);
         }

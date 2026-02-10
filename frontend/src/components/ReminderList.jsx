@@ -330,7 +330,7 @@ const ReminderList = () => {
                                         <div className="flex items-center text-xs text-gray-500 space-x-2">
                                             <span>To:</span>
                                             <div className="flex flex-wrap gap-1">
-                                                 {reminder.Clients && reminder.Clients.map(c => (
+                                                 {reminder.clients && reminder.clients.map(c => (
                                                      <span key={c.id} className="inline-block px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-600">
                                                          {c.name}
                                                      </span>

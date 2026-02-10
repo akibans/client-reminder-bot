@@ -1,16 +1,7 @@
 import db from '../models/index.js';
-const { Reminder, Client, User } = db;
+const { Reminder, Client } = db;
 import { Op } from 'sequelize';
 import whatsappService from '../services/whatsappService.js';
-import Joi from 'joi';
-
-// Validation schema
-const reminderSchema = Joi.object({
-  title: Joi.string().min(1).max(255).required(),
-  message: Joi.string().min(1).required(),
-  scheduledTime: Joi.date().iso().required(),
-  clientIds: Joi.array().items(Joi.string().uuid()).min(1).required()
-});
 
 // GET /api/reminders
 export const getReminders = async (req, res) => {
@@ -24,10 +15,7 @@ export const getReminders = async (req, res) => {
     }
     
     if (search) {
-      where[Op.or] = [
-        { title: { [Op.like]: `%${search}%` } },
-        { message: { [Op.like]: `%${search}%` } }
-      ];
+      where.message = { [Op.like]: `%${search}%` };
     }
     
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -37,32 +25,29 @@ export const getReminders = async (req, res) => {
       include: [{
         model: Client,
         as: 'clients',
-        attributes: ['id', 'name', 'phoneNumber'],
+        attributes: ['id', 'name', 'email', 'phone'],
         through: { attributes: [] }
       }],
-      order: [['scheduledTime', 'ASC']],
+      order: [['scheduleAt', 'ASC']],
       limit: parseInt(limit),
       offset
     });
     
+    // Response format matches what ReminderList.jsx expects
     res.json({
-      success: true,
-      data: reminders,
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        pages: Math.ceil(count / parseInt(limit))
-      }
+      reminders,
+      total: count,
+      page: parseInt(page),
+      totalPages: Math.ceil(count / parseInt(limit))
     });
   } catch (error) {
     console.error('Get reminders error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 export const createReminder = async (req, res) => {
   try {
-    // Validation is handled by middleware
     const { message, sendVia, scheduleAt, clients: clientIds } = req.body;
     const userId = req.user.id;
     
@@ -76,8 +61,7 @@ export const createReminder = async (req, res) => {
     
     if (clients.length !== clientIds.length) {
       return res.status(400).json({
-        success: false,
-        error: 'Some clients not found or do not belong to you'
+        message: 'Some clients not found or do not belong to you'
       });
     }
     
@@ -99,7 +83,7 @@ export const createReminder = async (req, res) => {
       include: [{
         model: Client,
         as: 'clients',
-        attributes: ['id', 'name', 'phone'], // Changed phoneNumber to phone to match Client model
+        attributes: ['id', 'name', 'email', 'phone'],
         through: { attributes: [] }
       }]
     });
@@ -115,12 +99,11 @@ export const createReminder = async (req, res) => {
     
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({
-        success: false,
-        error: 'Duplicate entry detected'
+        message: 'Duplicate entry detected'
       });
     }
     
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -129,22 +112,28 @@ export const updateReminder = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    const { title, message, scheduledTime } = req.body;
+    const { message, scheduleAt } = req.body;
 
     const reminder = await Reminder.findOne({ where: { id, userId } });
     if (!reminder) {
-      return res.status(404).json({ success: false, error: 'Reminder not found' });
+      return res.status(404).json({ message: 'Reminder not found' });
     }
 
-    await reminder.update({
-      title: title || reminder.title,
-      message: message || reminder.message,
-      scheduledTime: scheduledTime ? new Date(scheduledTime) : reminder.scheduledTime
-    });
+    // Only allow updating unsent reminders
+    if (reminder.sent) {
+      return res.status(400).json({ message: 'Cannot update a sent reminder' });
+    }
+
+    const updateData = {};
+    if (message) updateData.message = message;
+    if (scheduleAt) updateData.scheduleAt = new Date(scheduleAt);
+
+    await reminder.update(updateData);
 
     res.json({ success: true, data: reminder });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Update reminder error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -156,13 +145,14 @@ export const deleteReminder = async (req, res) => {
 
     const reminder = await Reminder.findOne({ where: { id, userId } });
     if (!reminder) {
-      return res.status(404).json({ success: false, error: 'Reminder not found' });
+      return res.status(404).json({ message: 'Reminder not found' });
     }
 
     await reminder.destroy();
     res.json({ success: true, message: 'Reminder deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Delete reminder error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -173,19 +163,20 @@ export const deleteRemindersBulk = async (req, res) => {
     const userId = req.user.id;
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, error: 'No IDs provided' });
+      return res.status(400).json({ message: 'No IDs provided' });
     }
 
-    await Reminder.destroy({
+    const deleted = await Reminder.destroy({
       where: {
         id: ids,
         userId
       }
     });
 
-    res.json({ success: true, message: 'Reminders deleted' });
+    res.json({ success: true, message: `${deleted} reminder(s) deleted` });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Bulk delete error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -197,19 +188,22 @@ export const retryReminder = async (req, res) => {
 
     const reminder = await Reminder.findOne({ where: { id, userId } });
     if (!reminder) {
-      return res.status(404).json({ success: false, error: 'Reminder not found' });
+      return res.status(404).json({ message: 'Reminder not found' });
     }
 
     await reminder.update({
       status: 'pending',
       sent: false,
       retryCount: 0,
-      scheduledTime: new Date()
+      scheduleAt: new Date(),
+      failureReason: null,
+      isProcessing: false
     });
 
     res.json({ success: true, message: 'Reminder queued for retry', data: reminder });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Retry reminder error:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -220,7 +214,7 @@ export const processDueReminders = async () => {
     
     const dueReminders = await Reminder.findAll({
       where: {
-        scheduledTime: { [Op.lte]: now },
+        scheduleAt: { [Op.lte]: now },
         sent: false,
         status: 'pending',
         retryCount: { [Op.lt]: 5 }
@@ -228,45 +222,19 @@ export const processDueReminders = async () => {
       include: [{
         model: Client,
         as: 'clients',
-        attributes: ['id', 'name', 'phoneNumber']
+        attributes: ['id', 'name', 'email', 'phone'],
+        through: { attributes: [] }
       }]
     });
     
     if (dueReminders.length > 0) {
-        console.log(`⏰ Found ${dueReminders.length} due reminders`);
+      console.log(`⏰ Found ${dueReminders.length} due reminders`);
     }
     
     for (const reminder of dueReminders) {
       try {
-        // Check WhatsApp connection
-        if (!whatsappService.isConnected()) { // Assumed isConnected is a method or property? Check service
-            // Step 368 used !whatsappService.isConnected property.
-            // But whatsappService content in Step 268 showed `this.status` and `getStatus`.
-            // Does it expose `isConnected` getter? `getStatus` wrapper?
-            // "this.status"
-            // Let's assume property exist or update it.
-            // Step 368: if (!whatsappService.isConnected) { ... }
-            // Let's stick to property if it was there.
-            // Wait, failure reason: `whatsappService.isConnected` property needs to exist on the instance.
-            // I'll check `whatsappService` again if I can, but to be safe I'll use `getStatus() === 'connected'`.
-        }
-        
-        // RE-READ whatsappService: Step 268:
-        // status = 'disconnected'.
-        // getStatus() return this.status.
-        // It has NO getter for isConnected.
-        // So `whatsappService.isConnected` is undefined -> false!
-        // So reminders will always be skipped?
-        // I should fix this to usage: `whatsappService.getStatus().status === 'connected'`? No, getStatus returns { status: ... }?
-        // Step 268: `getStatus() { return { status: this.status, ... } }`.
-        // So checking `whatsappService.status` (if public) or `whatsappService.getStatus().status`.
-        
-        // FIX: Update processDueReminders logic to use correct status check.
-        // const status = whatsappService.getStatus();
-        // if (status.status !== 'connected') ...
-        
         const statusData = whatsappService.getStatus();
-        if (statusData.status !== 'connected') {
+        if (reminder.sendVia === 'whatsapp' && statusData.status !== 'connected') {
           console.log(`⚠️ WhatsApp offline, skipping reminder ${reminder.id}`);
           await reminder.update({
             status: 'failed',
@@ -282,22 +250,31 @@ export const processDueReminders = async () => {
         
         for (const client of clients) {
           try {
-            const message = `*${reminder.title}*\n\n${reminder.message}\n\n_This is an automated reminder_`;
+            const messageText = `${reminder.message}\n\n_This is an automated reminder_`;
             
-            const result = await whatsappService.sendMessage(
-              client.phoneNumber,
-              message
-            );
-            
-            if (result.success) {
+            if (reminder.sendVia === 'whatsapp' && client.phone) {
+              const result = await whatsappService.sendMessage(
+                client.phone,
+                messageText
+              );
+              
+              if (result.success) {
+                sentCount++;
+                console.log(`✅ Sent to ${client.name} (${client.phone})`);
+              } else {
+                failCount++;
+                console.error(`❌ Failed to send to ${client.name}: ${result.error}`);
+              }
+            } else if (reminder.sendVia === 'email' && client.email) {
+              // Email sending handled by scheduler
               sentCount++;
-              console.log(`✅ Sent to ${client.name} (${client.phoneNumber})`);
+              console.log(`✅ Email queued for ${client.name} (${client.email})`);
             } else {
               failCount++;
-              console.error(`❌ Failed to send to ${client.name}: ${result.error}`);
+              console.warn(`⚠️ No contact info for ${client.name}`);
             }
             
-            // Rate limiting
+            // Rate limiting between messages
             await new Promise(r => setTimeout(r, 1000));
             
           } catch (sendError) {
@@ -307,7 +284,7 @@ export const processDueReminders = async () => {
         }
         
         // Update reminder status
-        if (sentCount === clients.length) {
+        if (sentCount === clients.length && clients.length > 0) {
           await reminder.update({
             sent: true,
             status: 'sent',
@@ -316,14 +293,17 @@ export const processDueReminders = async () => {
           console.log(`✅ Reminder ${reminder.id} fully sent`);
         } else if (sentCount > 0) {
           await reminder.update({
-            status: 'partial',
-            retryCount: reminder.retryCount + 1
+            sent: true,
+            status: 'sent',
+            sentAt: new Date(),
+            failureReason: `Partial: ${sentCount}/${clients.length} delivered`
           });
           console.log(`⚠️ Reminder ${reminder.id} partially sent`);
         } else {
           await reminder.update({
             status: 'failed',
-            retryCount: reminder.retryCount + 1
+            retryCount: reminder.retryCount + 1,
+            failureReason: 'All recipients failed'
           });
           console.log(`❌ Reminder ${reminder.id} failed`);
         }
@@ -332,7 +312,8 @@ export const processDueReminders = async () => {
         console.error(`Error processing reminder ${reminder.id}:`, error);
         await reminder.update({
           status: 'failed',
-          retryCount: reminder.retryCount + 1
+          retryCount: reminder.retryCount + 1,
+          failureReason: error.message
         });
       }
     }

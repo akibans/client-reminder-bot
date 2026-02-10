@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "backend": "cd backend && npm start"
+  },
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "socket.io": "^4.8.3",

@@ -185,6 +185,7 @@ export const deleteClient = async (req, res, next) => {
       where: { id, userId: req.user.id },
       include: {
         model: Reminder,
+        as: 'reminders',
         where: { sent: false },
         required: false
       },
@@ -197,10 +198,10 @@ export const deleteClient = async (req, res, next) => {
     }
 
     // Check for pending reminders
-    if (client.Reminders?.length > 0) {
+    if (client.reminders?.length > 0) {
       await t.rollback();
       return res.status(400).json({
-        message: `Client has ${client.Reminders.length} pending reminders. Delete or cancel them first.`
+        message: `Client has ${client.reminders.length} pending reminders. Delete or cancel them first.`
       });
     }
 

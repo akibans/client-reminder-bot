@@ -17,7 +17,7 @@ const ReminderEvent = sequelize.define('ReminderEvent', {
     onDelete: 'CASCADE' // Delete events when reminder is deleted
   },
   userId: {
-    type: DataTypes.INTEGER, // Who triggered this event ( null for system/automated)
+    type: DataTypes.UUID,
     allowNull: true,
     references: {
       model: 'Users',

@@ -13,7 +13,8 @@ const ReminderClient = sequelize.define('ReminderClient', {
     references: {
       model: 'Reminders',
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE'
   },
   clientId: {
     type: DataTypes.UUID,
@@ -21,7 +22,8 @@ const ReminderClient = sequelize.define('ReminderClient', {
     references: {
       model: 'Clients',
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE'
   }
 }, {
   tableName: 'ReminderClients',

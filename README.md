@@ -55,6 +55,5 @@ npm run dev
 - **node-cron**: Reliable 60-second execution heartbeat.
 - **Vite / React 18**: Blazing fast frontend builds.
 - **Tailwind 4.0**: cutting-edge styling.
-
 ---
 *Built with professional discipline, automated retries, and clean audit trails.*

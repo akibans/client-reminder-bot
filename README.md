@@ -48,7 +48,6 @@ npm run dev
 ```
 
 ---
-
 ## 📦 Features & Tech Stack
 - **Node.js / Express**: High-performance REST API.
 - **SQLite / Sequelize**: Robust relational data persistence (Free / No Setup).

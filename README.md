@@ -44,7 +44,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
 ---
 ## 📦 Features & Tech Stack
 - **Node.js / Express**: High-performance REST API.

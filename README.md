@@ -5,6 +5,7 @@
 This application allows business owners to manage clients and schedule automated reminders via **Email** and a **Professional WhatsApp Mock** delivery engine. Built with a focus on scalability, strict validation, and the **Senior Service Layer Pattern**.
 
 ---
+
 ## 🏗️ Architecture & Clean Code (Senior Practices)
 
 ###  Phase 1 — Backend (Logic-First)

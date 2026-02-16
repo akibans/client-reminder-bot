@@ -39,7 +39,7 @@ npm install
 # Create .env (See .env.example)
 npm start
 ```
-
+---
 ### 2. Frontend Prep
 ```bash
 cd frontend

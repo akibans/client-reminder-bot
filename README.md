@@ -1,4 +1,4 @@
-# Professional Client Reminder Bot
+# Client Reminder Bot Automation
 
 🚀 **Full-Stack (SQLite/Node/React) Automation Suite**
 

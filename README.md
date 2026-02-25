@@ -1,4 +1,4 @@
-ndcc# Client Reminder Bot Automation
+# Client Reminder Bot Automation
 
 🚀 **Full-Stack (SQLite/Node/React) Automation Suite**
 
